@@ -442,7 +442,89 @@ whole challenge.
 
 ---
 
-## 15. TL;DR
+## 15. Building the intuition (derive these, don't memorize them)
+
+The goal isn't to memorize tricks like `(counter + 1) & 7` — it's to *see why* they work
+so you can rebuild any of them at the keyboard. A few mental habits get you there.
+
+### Habit 1 — see **columns**, not a number
+
+A byte is 8 independent columns with fixed values:
+
+```
+128  64  32  16   8   4   2   1
+```
+
+Every bitwise operator acts on **each column on its own**. The moment you picture columns
+instead of a number, `& | ^ ~` stop being arithmetic and become simple per-column rules
+("keep this column", "force it on", "flip it"). That single shift removes most of the magic.
+
+### Habit 2 — read every constant as its **bit pattern**
+
+When you meet a "magic number", immediately ask *"what does that look like in binary?"* —
+the pattern tells you the constant's **job**:
+
+| Constant | Binary | Its job |
+|---|---|---|
+| `7`    | `0000 0111` | the low 3 bits / "mod 8" |
+| `0x0F` | `0000 1111` | the low nibble (4 bits) |
+| `0xFF` | `1111 1111` | the whole byte |
+| `0x80` | `1000 0000` | just the top bit (bit 7) |
+| `1<<n` | one `1` at position n | "target pin n" |
+
+`& 7` isn't a trick once you see `7` as `0b111` = "keep the bottom three bits."
+
+### Habit 3 — learn the three **power-of-2 identities** (they explain most "tricks")
+
+```
+x << n   ==  x * 2ⁿ        (shift left  = multiply by a power of 2)
+x >> n   ==  x / 2ⁿ        (shift right = divide   by a power of 2)
+x & (2ⁿ − 1)  ==  x mod 2ⁿ (mask of n low 1s = remainder mod 2ⁿ)
+```
+
+> The third is the big one. `2ⁿ − 1` is exactly "n ones" (`8 − 1 = 7 = 0b111`), so AND-ing
+> with it keeps the low n bits — which **is** the remainder after dividing by `2ⁿ`.
+
+### Worked example — why `(counter + 1) & 7` wraps 7 → 0
+
+`& 7` forces the result into `0..7` by deleting everything above bit 2. At the rollover,
+`counter` is `7`, and `+1` carries up into bit 3 — a bit the mask throws away:
+
+```
+  8 = 0000 1000      ← the +1 carried into bit 3
+  7 = 0000 0111      ← mask (keep low 3 bits)
+  & ───────────
+      0000 0000  = 0     ← bit 3 isn't in the mask → discarded → wraps to 0
+```
+
+So `(counter + 1) & 7` is just `(counter + 1) mod 8`. The wrap is **free** because the range
+is a power of 2 and the overflow lands in a discarded bit. (If your range were *not* a power
+of 2 — say a die, `1..6` — masking can't do it; you'd need `% 6` or an explicit `if`.)
+
+### Same trick, stepping by 2 — it still wraps, but watch what it skips
+
+`(counter + 2) & 7` = `(counter + 2) mod 8` still stays in range, but the **sequence** is:
+
+```
+0 → 2 → 4 → 6 → (8&7)=0 → 2 → …      only the EVEN values; 1,3,5,7 never appear
+```
+
+Because the step (2) shares a factor with 8, you only visit half the slots. A step that's
+**coprime** to 8 (`1, 3, 5, 7`) visits *all* eight before repeating — e.g. step 3 gives
+`0,3,6,1,4,7,2,5,0`. Lesson: `& 7` answers *"stay in range and wrap"*, **not** *"hit every
+value"* — knowing which question a trick answers is half the skill.
+
+### Habit 4 — go **goal → code**, and verify by hand
+
+- Memorize **intents**, then rebuild the operator:
+  "select bits" → `& mask` · "force on" → `| mask` · "flip" → `^ mask` ·
+  "target bit n" → `1 << n` · "stay in a 2ⁿ range / wrap" → `& (2ⁿ − 1)`.
+- When unsure, **write the columns out** on a tiny example and apply the op by hand (like
+  the traces above). Do it enough times and it becomes reflex — that *is* the intuition.
+
+---
+
+## 16. TL;DR
 
 A number is a row of bits; **bit 0 is the rightmost (value 1)**. A **register** is an 8-bit
 box in the chip wired to pins: `DDRB` sets input/output, `PORTB` sets HIGH/LOW, `PINB`
