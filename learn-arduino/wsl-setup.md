@@ -243,11 +243,11 @@ The port on WSL is **`/dev/ttyUSB0`** (on macOS it was `/dev/cu.usbserial-120`).
 ```bash
 cd learn-arduino/01_blink_led
 
-# Compile
-arduino-cli compile --fqbn arduino:avr:uno .
+# Compile into ./build (so clangd can read build/compile_commands.json)
+arduino-cli compile --fqbn arduino:avr:uno --build-path ./build .
 
-# Upload
-arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno .
+# Upload the binary that was just built in ./build
+arduino-cli upload -p /dev/ttyUSB0 --fqbn arduino:avr:uno --input-dir ./build .
 
 # Serial monitor (Ctrl+C to exit)
 arduino-cli monitor -p /dev/ttyUSB0 -c baudrate=9600
@@ -260,14 +260,25 @@ Add to `~/.zshrc` or `~/.bashrc`. These match the Neovim/clangd setup — `ac` c
 **clangd reads** for autocomplete, hover (`K`), go-to-definition (`gd`), and diagnostics:
 
 ```bash
-alias ac='arduino-cli compile --fqbn arduino:avr:uno --build-path ./build .'
-alias au='arduino-cli upload  -p /dev/ttyUSB0 --fqbn arduino:avr:uno .'
-alias am='arduino-cli monitor -p /dev/ttyUSB0 -c baudrate=9600'
+# Arduino CLI
+export PATH="$HOME/opt/arduino/:$PATH"
+export ARDUINO_PORT=/dev/ttyUSB0
+export ARDUINO_FQBN=arduino:avr:uno
+
+alias ac='arduino-cli compile --fqbn "$ARDUINO_FQBN" --build-path ./build .'
+alias au='arduino-cli upload  -p "$ARDUINO_PORT" --fqbn "$ARDUINO_FQBN" --input-dir ./build .'
+alias am='arduino-cli monitor -p "$ARDUINO_PORT" -c baudrate=9600'
 ```
 
+> **Why `ac` uses `--build-path ./build` and `au` uses `--input-dir ./build`:**
+> `ac` compiles into the sketch's `./build` folder (so clangd can read
+> `build/compile_commands.json`). `--input-dir ./build` then tells `au` to flash
+> *exactly that* binary instead of arduino-cli's separate default build location — so
+> `ac && au` builds once and uploads the same artifact, with no hidden rebuild and no
+> risk of flashing a stale binary. The two flags are a matched pair.
+>
 > A plain `ac` already generates the compilation database — no separate
-> `--only-compilation-database` run is needed.
-> The `build/` folders are git-ignored (see `.gitignore`).
+> `--only-compilation-database` run is needed. The `build/` folders are git-ignored.
 > clangd does **not** auto-inject `#include <Arduino.h>` like the Arduino IDE, so add
 > that line at the top of each sketch or symbols like `digitalWrite`/`OUTPUT` show as
 > undeclared.
@@ -304,15 +315,49 @@ To stop forwarding (give the port back to Windows):
 usbipd detach --busid <BUSID>
 ```
 
+### Re-attach without leaving WSL
+
+You don't have to switch to a Windows terminal — you can drive the Windows `usbipd`
+from inside your WSL shell through `powershell.exe`. `usbipd` is **not** on the PATH
+that interop inherits, so call it by its full path:
+
+```bash
+powershell.exe -NoProfile -Command "& 'C:\Program Files\usbipd-win\usbipd.exe' attach --wsl --hardware-id 1a86:7523"
+```
+
+Wrap that in a function in your `~/.zshrc` so reconnecting is one word:
+
+```bash
+# Re-attach the Arduino to WSL (run after a reboot / wsl --shutdown / replug)
+arduino-attach() {
+  powershell.exe -NoProfile -Command "& 'C:\Program Files\usbipd-win\usbipd.exe' attach --wsl --hardware-id 1a86:7523"
+}
+```
+
+So a fresh session, when `/dev/ttyUSB0` is missing, is just:
+
+```bash
+arduino-attach            # bridge the board back into WSL
+arduino-cli board list    # confirm /dev/ttyUSB0 is back
+```
+
+> This is exactly what was done to fix a `cannot open port ... No such file or
+> directory` upload error: the board had detached on reboot, and `arduino-attach`
+> brought `/dev/ttyUSB0` back. The Windows COM number may change across reconnects
+> (e.g. COM10 → COM9), but `--hardware-id` matches the chip so the command never
+> needs editing.
+
 ---
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `No boards found` / `/dev/ttyUSB0` missing | Device not attached to WSL | `usbipd list` to get the BUSID, then `usbipd attach --wsl --busid <BUSID>` (confirm it's bound/`Shared` first) |
+| `No boards found` / `/dev/ttyUSB0` missing | Device not attached to WSL | Run `arduino-attach` (or `usbipd attach --wsl --hardware-id 1a86:7523`) |
+| `cannot open port /dev/ttyUSB0: No such file or directory` | Board detached from WSL (after reboot / `wsl --shutdown` / replug) | Re-attach: `arduino-attach` (see [Reconnecting](#reconnecting)) |
 | `cannot open port /dev/ttyUSB0: Permission denied` | Not in `dialout` group, or group not active in this shell | `sudo usermod -aG dialout $USER` then `newgrp dialout` (or open a new terminal) |
-| Board gone after replug / reboot / `wsl --shutdown` | `attach` is per-connection | `usbipd list` → `usbipd attach --wsl --busid <BUSID>` |
+| Board gone after replug / reboot / `wsl --shutdown` | `attach` is per-connection | `arduino-attach`, or `usbipd attach --wsl --hardware-id 1a86:7523` |
+| Upload flashes old code after editing | `au` read a stale/default build, not `./build` | Ensure `au` has `--input-dir ./build` and you ran `ac` first |
 | Wrong device attached / BUSID changed | Bus ID tracks the physical port, not the board | Re-check with `usbipd list`, or attach by `--hardware-id 1a86:7523` instead |
 | `usbipd` not recognized in PowerShell | PATH not refreshed after install | Reopen PowerShell, or use `& 'C:\Program Files\usbipd-win\usbipd.exe' ...` |
 | Board name shows `Unknown` | Normal for CH340 clones | Ignore — always pass `--fqbn arduino:avr:uno` |

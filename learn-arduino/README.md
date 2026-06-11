@@ -24,3 +24,5 @@ Personal Arduino learning exercises focused on Embedded Systems and Modern C++.
 | `18_multi_timer_scheduler`          | Multiple Timers, Cooperative Scheduling        |
 | `19_task_scheduler_struct`          | Structs, Data Modelling                        |
 | `20_dynamic_led_sequence`           | Pointers, Array Decay, Generic Functions       |
+| `21_generic_task_scheduler`         | Pointers, Scheduler Class, Generic Components   |
+| `22_callback_scheduler`             | Function Pointers, Callbacks, Decoupled Tasks   |

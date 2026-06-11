@@ -94,9 +94,11 @@
  *   frameworks are designed.
  */
 
-
-#include <Arduino.h>
 #include "Led.h"
+#include <Arduino.h>
 
+Led led1(8);
+Led led2(9);
+Led led3(10);
 void setup() {};
 void loop() {};
