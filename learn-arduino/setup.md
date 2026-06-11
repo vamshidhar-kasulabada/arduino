@@ -2,6 +2,10 @@
 
 This document describes how to build, upload and monitor Arduino sketches in this repository.
 
+> **On Windows WSL2?** USB devices aren't visible to WSL by default. See
+> [`wsl-setup.md`](./wsl-setup.md) for the USB/IP forwarding steps; the build/upload
+> commands here apply once the board shows up as `/dev/ttyUSB0`.
+
 ---
 
 ## Prerequisites
