@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# PlatformIO
+.pio/
+.vscode/.browse.c_cpp.db*
+
+# Arduino CLI build output
+build/
+
+# Temporary build directories
+*/build/
+*/build-*/
+
+# Compiled binaries
+*.hex
+*.bin
+*.elf
+*.eep
+
+# Object files
+*.o
+*.a
+
+# Logs
+*.log
