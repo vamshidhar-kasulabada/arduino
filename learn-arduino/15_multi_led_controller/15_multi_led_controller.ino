@@ -138,7 +138,6 @@ void loop() {
       for (int i = 1; i <= size; i++) {
         Serial.print("LED");
         Serial.print(i);
-        // Serial.println(" : " + leds[i - 1].isOn() ? "ON" : "OFF");
         Serial.print(" : ");
         if (leds[i-1].isOn()) {
           Serial.println("ON");

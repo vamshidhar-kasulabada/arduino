@@ -40,10 +40,10 @@
 
 #include <Arduino.h>
 
-unsigned buttonLastPressedAt = 0;
+unsigned long buttonLastPressedAt = 0;
 int prevPin8state = HIGH;
 int ledState = LOW;
-uint16_t time = 2000;
+uint16_t time = 5000;
 
 void setup() {
   pinMode(8, INPUT_PULLUP);

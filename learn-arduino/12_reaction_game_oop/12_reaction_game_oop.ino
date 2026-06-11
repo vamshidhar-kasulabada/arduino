@@ -146,14 +146,14 @@ void loop() {
       led.on();
       gameState = WAITING_FOR_REACTION;
     } else if (button.wasPressed()) {
-      Serial.println("Too Early!!");
+      Serial.println("Too Early!");
       gameState = WAITING_FOR_BTN_PRESS;
     }
     break;
   case WAITING_FOR_REACTION:
     if (button.wasPressed()) {
       btnPressedAt = millis();
-      Serial.println("Reactin Time: ");
+      Serial.println("Reaction Time: ");
       reactionTime = btnPressedAt - ledOnAt;
       Serial.print(reactionTime);
       Serial.println("ms");
