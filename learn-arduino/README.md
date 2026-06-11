@@ -26,3 +26,5 @@ Personal Arduino learning exercises focused on Embedded Systems and Modern C++.
 | `20_dynamic_led_sequence`           | Pointers, Array Decay, Generic Functions       |
 | `21_generic_task_scheduler`         | Pointers, Scheduler Class, Generic Components   |
 | `22_callback_scheduler`             | Function Pointers, Callbacks, Decoupled Tasks   |
+| `23_polymorphic_scheduler`          | Inheritance, Virtual Functions, Polymorphism    |
+| `24_pwm_led_fade`                   | PWM, `analogWrite()`, Duty Cycle, Analog Output |
