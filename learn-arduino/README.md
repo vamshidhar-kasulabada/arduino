@@ -28,3 +28,4 @@ Personal Arduino learning exercises focused on Embedded Systems and Modern C++.
 | `22_callback_scheduler`             | Function Pointers, Callbacks, Decoupled Tasks   |
 | `23_polymorphic_scheduler`          | Inheritance, Virtual Functions, Polymorphism    |
 | `24_pwm_led_fade`                   | PWM, `analogWrite()`, Duty Cycle, Analog Output |
+| `25_port_manipulation`              | Registers, Bitwise Ops, Masks, Read-Modify-Write |
